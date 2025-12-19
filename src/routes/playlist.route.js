@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   addSongToPlaylist,
   createPlaylist,
+  deletePlaylist,
   getUserPlaylists,
   removeSongFromPlaylist,
   updatePlaylist,
@@ -13,6 +14,7 @@ router.post("/", createPlaylist);
 router.post("/:id/add-song", addSongToPlaylist);
 router.get("/user", getUserPlaylists);
 router.put("/:id", updatePlaylist);
-router.delete("/:id", removeSongFromPlaylist);
+router.delete("/:id/delete-song", removeSongFromPlaylist);
+router.delete("/:id", deletePlaylist);
 
 export default router;

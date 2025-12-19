@@ -11,7 +11,13 @@ const getUserIdFromUid = async (fireBaseUid) => {
 export const createPlaylist = async (req, res, next) => {
   try {
     const { title, description, imageUrl } = req.body;
-    const fireBaseUid = req.auth.uid;
+    let fireBaseUid = req.auth?.uid;
+    if (!fireBaseUid) {
+      fireBaseUid = req.body.uid || req.query.uid;
+    }
+    if (!fireBaseUid) {
+      return res.status(400).json({ error: "UID not provided!" });
+    }
     const userId = await getUserIdFromUid(fireBaseUid);
     const newPlaylist = new Playlist({
       title,
@@ -29,16 +35,13 @@ export const createPlaylist = async (req, res, next) => {
 
 export const getUserPlaylists = async (req, res, next) => {
   try {
-    let fireBaseUid = req.auth?.uid; // Nếu không có Firebase token vẫn không crash
-
-    // 🔥 hỗ trợ test Postman không cần token
+    let fireBaseUid = req.auth?.uid;
     if (!fireBaseUid) {
       fireBaseUid = req.body.uid || req.query.uid;
     }
     if (!fireBaseUid) {
       return res.status(400).json({ error: "UID not provided!" });
     }
-    console.log("UID nhận được:", fireBaseUid);
     const userId = await getUserIdFromUid(fireBaseUid);
     const playlists = await Playlist.find({ userId })
       .populate("songs", "title artist imageUrl audioUrl duration")
@@ -61,7 +64,13 @@ export const addSongToPlaylist = async (req, res, next) => {
     }
 
     // check ownership
-    const fireBaseUid = req.auth.uid;
+    let fireBaseUid = req.auth?.uid;
+    if (!fireBaseUid) {
+      fireBaseUid = req.body.uid || req.query.uid;
+    }
+    if (!fireBaseUid) {
+      return res.status(400).json({ error: "UID not provided!" });
+    }
     const userId = await getUserIdFromUid(fireBaseUid);
     if (playlist.userId.toString() !== userId.toString()) {
       return res
@@ -100,7 +109,13 @@ export const removeSongFromPlaylist = async (req, res, next) => {
     }
 
     // Check ownership
-    const fireBaseUid = req.auth.uid;
+    let fireBaseUid = req.auth?.uid;
+    if (!fireBaseUid) {
+      fireBaseUid = req.body.uid || req.query.uid;
+    }
+    if (!fireBaseUid) {
+      return res.status(400).json({ error: "UID not provided!" });
+    }
     const userId = await getUserIdFromUid(fireBaseUid);
     if (playlist.userId.toString() !== userId.toString()) {
       return res
@@ -131,7 +146,13 @@ export const updatePlaylist = async (req, res, next) => {
     }
 
     // Check ownership
-    const fireBaseUid = req.auth.uid;
+    let fireBaseUid = req.auth?.uid;
+    if (!fireBaseUid) {
+      fireBaseUid = req.body.uid || req.query.uid;
+    }
+    if (!fireBaseUid) {
+      return res.status(400).json({ error: "UID not provided!" });
+    }
     const userId = await getUserIdFromUid(fireBaseUid);
     if (playlist.userId.toString() !== userId.toString()) {
       return res
@@ -145,6 +166,33 @@ export const updatePlaylist = async (req, res, next) => {
 
     await playlist.save();
     res.status(200).json({ playlist });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deletePlaylist = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const playlist = await Playlist.findById(id);
+    if (!playlist) {
+      return res.status(404).json({ message: "Playlist not found" });
+    }
+    let fireBaseUid = req.auth?.uid;
+    if (!fireBaseUid) {
+      fireBaseUid = req.body.uid || req.query.uid;
+    }
+    if (!fireBaseUid) {
+      return res.status(400).json({ error: "UID not provided!" });
+    }
+    const userId = await getUserIdFromUid(fireBaseUid);
+    if (playlist.userId.toString() !== userId.toString()) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: You do not own this playlist" });
+    }
+    await Playlist.findByIdAndDelete(id);
+    res.status(200).json({ message: "Playlist deleted successfully" });
   } catch (error) {
     next(error);
   }
