@@ -1,4 +1,5 @@
 import admin from "../firebase/firebaseAdmin.js";
+import { User } from "../models/user.model.js";
 
 // Middleware: bắt buộc đăng nhập
 export const protectRoute = async (req, res, next) => {
@@ -13,13 +14,23 @@ export const protectRoute = async (req, res, next) => {
     const token = authHeader.split(" ")[1];
     const decodedToken = await admin.auth().verifyIdToken(token);
 
+    let user = await User.findOne({ fireBaseUid: decodedToken.uid });
+
+    if (!user) {
+      user = await User.create({
+        fireBaseUid: decodedToken.uid,
+        fullName: decodedToken.name || "New User",
+        imageUrl: decodedToken.picture || "",
+      });
+    }
     // Gắn user info vào req
     req.auth = {
       uid: decodedToken.uid,
       email: decodedToken.email,
+      userId: user._id,
       //   role: decodedToken.role || "user", // role custom claim
     };
-    
+
     next();
   } catch (error) {
     console.error("protectRoute error:", error);

@@ -15,6 +15,10 @@ const playlistSchema = new mongoose.Schema(
       required: false,
       default: process.env.IMG_DEFAULT_PLAYLIST_URL,
     },
+    imagePublicId: {
+      type: String,
+      required: true,
+    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
