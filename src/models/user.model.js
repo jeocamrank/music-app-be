@@ -9,6 +9,10 @@ const userSchema = new mongoose.Schema(
     imageUrl: {
       type: String,
     },
+    imagePublicId: {
+      type: String,
+      default: null,
+    },
     fireBaseUid: {
       type: String,
       required: true,

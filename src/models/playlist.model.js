@@ -17,7 +17,8 @@ const playlistSchema = new mongoose.Schema(
     },
     imagePublicId: {
       type: String,
-      required: true,
+      default: null,
+      required: false,
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
