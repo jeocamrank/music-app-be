@@ -44,16 +44,38 @@ export const createPlaylist = async (req, res, next) => {
       return res.status(400).json({ error: "UID not provided!" });
     }
 
-    const userId = req.auth.userId || (await getUserIdFromUid(fireBaseUid));
+    // 1. Tìm User trong DB để check trạng thái Premium
+    const user = await User.findOne({ fireBaseUid });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 2. LOGIC KIỂM TRA GIỚI HẠN (QUAN TRỌNG)
+    if (!user.isPremium) {
+      // Đếm số playlist hiện có của user này
+      const playlistCount = await Playlist.countDocuments({ userId: user._id });
+
+      // Nếu đã có 3 (hoặc hơn) playlist thì chặn
+      if (playlistCount >= 2) {
+        return res.status(403).json({
+          message:
+            "Tài khoản miễn phí chỉ được tạo tối đa 2 playlist. Hãy nâng cấp Premium để tạo không giới hạn.",
+        });
+      }
+    }
+
+    // 3. Nếu thỏa mãn điều kiện thì mới upload ảnh (để tiết kiệm tài nguyên)
     const image = await uploadToCloudinary(req.files.imageFile);
+
     const newPlaylist = new Playlist({
       title,
       description,
       imageUrl: image.url,
       imagePublicId: image.publicId,
-      userId,
+      userId: user._id, // Dùng user._id đã lấy ở trên
       songs: [],
     });
+
     await newPlaylist.save();
     res.status(201).json({ playlist: newPlaylist });
   } catch (error) {
@@ -94,7 +116,7 @@ export const getPlaylistById = async (req, res, next) => {
     const userId = await getUserIdFromUid(fireBaseUid);
     const playlist = await Playlist.findOne({ _id: id, userId }).populate(
       "songs",
-      "title artist imageUrl audioUrl duration"
+      "title artist imageUrl audioUrl duration",
     );
     if (!playlist) {
       return res
@@ -144,7 +166,7 @@ export const addSongToPlaylist = async (req, res, next) => {
 
     const updatedPlaylist = await Playlist.findById(id).populate(
       "songs",
-      "title artist imageUrl audioUrl duration"
+      "title artist imageUrl audioUrl duration",
     );
     res.status(200).json({ playlist: updatedPlaylist });
   } catch (error) {
@@ -181,7 +203,7 @@ export const removeSongFromPlaylist = async (req, res, next) => {
 
     const updatedPlaylist = await Playlist.findById(id).populate(
       "songs",
-      "title artist imageUrl audioUrl duration"
+      "title artist imageUrl audioUrl duration",
     );
     res.status(200).json({ playlist: updatedPlaylist });
   } catch (error) {

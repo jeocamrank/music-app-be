@@ -18,7 +18,10 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    isPremium: { type: Boolean, default: false },
+    premiumExpiry: { type: Date, default: null },
   },
+  
   { timestamps: true }
 );
 

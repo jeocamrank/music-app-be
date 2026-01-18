@@ -19,8 +19,10 @@ export const getMe = async (req, res, next) => {
     const userId = req.auth.userId;
 
     const user = await User.findById(userId).select(
-      "_id fullName imageUrl fireBaseUid"
+      "_id fullName imageUrl fireBaseUid isPremium premiumExpiry",
     );
+
+    console.log("User found:", user);
 
     if (!user) {
       return res.status(404).json({ message: "User không tồn tại" });
@@ -31,7 +33,6 @@ export const getMe = async (req, res, next) => {
     next(error);
   }
 };
-
 
 export const updateMe = async (req, res, next) => {
   try {

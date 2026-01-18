@@ -10,6 +10,7 @@ import adminRoutes from "./routes/admin.route.js";
 import songRoutes from "./routes/song.route.js";
 import albumRoutes from "./routes/album.route.js";
 import statsRoutes from "./routes/stat.route.js";
+import paymentRoutes from "./routes/payment.route.js";
 import playlistRoutes from "./routes/playlist.route.js";
 // import { verifyFirebaseToken } from "./middleware/verifyFirebaseToken.middleware.js";
 import "./firebase/firebaseAdmin.js";
@@ -23,13 +24,14 @@ const app = express();
 const PORT = process.env.PORT;
 
 const httpSever = createServer(app);
-initializeSocket(httpSever);
+const io = initializeSocket(httpSever);
+app.set("io", io);
 
 app.use(
   cors({
     origin: "http://localhost:3000",
     credentials: true,
-  })
+  }),
 );
 
 app.use(express.json()); // to parse req.body
@@ -42,9 +44,10 @@ app.use(
     limits: {
       fileSize: 10 * 1024 * 1024, // 10MB
     },
-  })
+  }),
 );
 
+app.use("/api/payment", paymentRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
