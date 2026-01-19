@@ -73,6 +73,63 @@ export const updateMe = async (req, res, next) => {
   }
 };
 
+export const updateUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { fullName, isPremium } = req.body;
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (fullName) user.fullName = fullName;
+    if (isPremium !== undefined) {
+        user.isPremium = isPremium === 'true' || isPremium === true;
+
+        if (!user.isPremium) {
+            user.premiumExpiry = null;
+        } else if (!user.premiumExpiry) {
+            const expiry = new Date();
+            expiry.setDate(expiry.getDate() + 30);
+            user.premiumExpiry = expiry;
+        }
+    }
+
+    if (req.files?.image) {
+      if (user.imagePublicId) {
+        await cloudinary.uploader.destroy(user.imagePublicId);
+      }
+      const image = await uploadToCloudinary(req.files.image);
+      user.imageUrl = image.url;
+      user.imagePublicId = image.publicId;
+    }
+    await user.save();
+    res.status(200).json({ message: "User updated successfully", user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const deleteUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    if (user.imagePublicId) {
+      await cloudinary.uploader.destroy(user.imagePublicId);
+    }
+    await Playlist.deleteMany({ userId: user._id });
+    await User.findByIdAndDelete(id);
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getAllUsers = async (req, res, next) => {
   try {
     const currentUserId = req.auth.uid; // FireBase UID

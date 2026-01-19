@@ -133,3 +133,25 @@ export const checkPaymentStatus = async (req, res) => {
     return res.status(500).json({ message: "Internal Error" });
   }
 };
+
+export const getAllPayments = async (req, res, next) => {
+  try {
+    // 1. Lấy tất cả giao dịch từ DB
+    const payments = await Payment.find()
+      // Sắp xếp: Mới nhất lên đầu (-1), cũ nhất xuống dưới
+      .sort({ createdAt: -1 }) 
+      // Populate: Lấy thêm thông tin User (tên, email, ảnh) dựa vào userId trong bảng Payment
+      .populate("userId", "fullName email imageUrl fireBaseUid"); 
+
+    // 2. Trả về kết quả
+    return res.status(200).json({ 
+      success: true,
+      count: payments.length,
+      payments 
+    });
+
+  } catch (error) {
+    console.error("Get All Payments Error:", error);
+    next(error);
+  }
+};
