@@ -1,5 +1,6 @@
 import Router from "express";
 import {
+  downloadSong,
   getAllSongs,
   getFeaturedSongs,
   getMadeForYou,
@@ -13,5 +14,6 @@ router.get("/featured", getFeaturedSongs);
 router.get("/make-for-you", getMadeForYou);
 router.get("/trending", getTrendingSongs);
 router.get("/", protectRoute, requireAdmin, getAllSongs);
+router.get("/download/:id", protectRoute, downloadSong);
 
 export default router;
